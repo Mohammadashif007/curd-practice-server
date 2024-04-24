@@ -5,8 +5,9 @@ const port = process.env.PORT || 3000;
 require('dotenv').config()
 
 app.use(cors());
+app.use(express.json())
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri =
     `mongodb+srv://${process.env.DB_user}:${process.env.DB_pass}@cluster0.u69fsfj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -31,6 +32,49 @@ async function run() {
             const result = await userCollections.find().toArray();
             res.send(result);
         })
+
+        app.get('/users/:id', async(req, res) => {
+            const id = req.params.id;
+            const query = {_id : new ObjectId(id)}
+            const result = await userCollections.findOne(query);
+            res.send(result);
+        })
+
+        app.post('/users', async(req, res) => {
+            const doc = req.body;
+            console.log(doc);
+            const result = await userCollections.insertOne(doc);
+            res.send(result);
+        })
+
+        app.delete("/users/:id", async(req, res) => {
+            const id = req.params.id;
+            const query = {_id : new ObjectId(id)};
+            const result = await userCollections.deleteOne(query);
+            res.send(result);
+        })
+
+        app.put("/users/:id", async(req, res) => {
+            const id = req.params.id;
+            const filter = {_id: new ObjectId(id)}
+            const options = { upsert: true };
+            const user = req.body;
+
+            const updatedUser = {
+                $set: {
+                    name: user.name,
+                    email: user.email,
+                    age: user.age,
+                    id: user.id
+                }
+            }
+            const result = await userCollections.updateOne(filter, updatedUser,  options)
+            res.send(result)
+
+        })
+
+
+      
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
